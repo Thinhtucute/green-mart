@@ -20,7 +20,7 @@ import Rating from "./Rating";
 
 const ProductDetails = ({ product }) => {
   const productId = product.id;
-  const currency = "đ"; // VND currency
+  const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "$";
 
   const cart = useSelector((state) => state.cart.cartItems);
   const dispatch = useDispatch();
@@ -70,145 +70,104 @@ const ProductDetails = ({ product }) => {
   })();
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="grid md:grid-cols-2 gap-8">
-        {/* Product Images */}
-        <div className="space-y-4">
-          <div className="aspect-square rounded-lg overflow-hidden border border-gray-200">
-            <Image
-              src={product.images?.[selectedImage] || "/placeholder.png"}
-              alt={product.name}
-              className="w-full h-full object-cover"
-              width={500}
-              height={500}
-            />
-          </div>
-          {product.images && product.images.length > 1 && (
-            <div className="grid grid-cols-4 gap-4">
-              {product.images.map((image, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedImage(index)}
-                  className={`aspect-square rounded-lg overflow-hidden border-2 ${
-                    selectedImage === index
-                      ? "border-green-600"
-                      : "border-gray-200"
-                  }`}
-                >
-                  <Image
-                    src={image}
-                    alt={`${product.name} ${index + 1}`}
-                    className="w-full h-full object-cover"
-                    width={100}
-                    height={100}
-                  />
-                </button>
-              ))}
+    <div className="flex max-lg:flex-col gap-12">
+      <div className="flex max-sm:flex-col-reverse gap-3">
+        <div className="flex sm:flex-col gap-3">
+          {product.images?.map((image, index) => (
+            <div
+              key={index}
+              onClick={() => setMainImage(product.images[index])}
+              className="bg-slate-100 flex items-center justify-center size-26 rounded-lg group cursor-pointer overflow-hidden"
+            >
+              <Image
+                src={image}
+                className="group-hover:scale-103 group-active:scale-95 transition object-cover"
+                alt=""
+                width={100}
+                height={100}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="relative flex justify-center items-center h-100 sm:size-113 bg-slate-100 rounded-lg overflow-hidden">
+          <Image
+            src={mainImage}
+            alt=""
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="object-cover"
+          />
+        </div>
+      </div>
+      <div className="flex-1">
+        <h1 className="text-3xl font-semibold text-slate-800">
+          {product.name}
+        </h1>
+        <div className="flex items-center mt-2">
+          {Array(5)
+            .fill("")
+            .map((_, index) => (
+              <StarIcon
+                key={index}
+                size={14}
+                className="text-transparent mt-0.5"
+                fill={averageRating >= index + 1 ? "#00C950" : "#D1D5DB"}
+              />
+            ))}
+          <p className="text-sm ml-3 text-slate-500">
+            {ratingsArray.length} Đánh giá
+          </p>
+        </div>
+        <div className="flex items-start my-6 gap-3 text-2xl font-semibold text-slate-800">
+          <p>
+            {" "}
+            {product.price} {currency}
+          </p>
+          <p className="text-xl text-slate-500 line-through">
+            {product.mrp}
+            {currency}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-slate-500">
+          <TagIcon size={14} />
+          <p>
+            Tiết kiệm{" "}
+            {(((product.mrp - product.price) / product.mrp) * 100).toFixed(0)}%
+            ngay hôm nay
+          </p>
+        </div>
+        <div className="flex items-end gap-5 mt-10">
+          {cart[productId] && (
+            <div className="flex flex-col gap-3">
+              <p className="text-lg text-slate-800 font-semibold">Số lượng</p>
+              <Counter productId={productId} />
             </div>
           )}
+          <button
+            onClick={() =>
+              !cart[productId] ? handleAddToCart() : router.push("/cart")
+            }
+            className="bg-green-600  text-white px-10 py-3 text-sm font-medium rounded hover:bg-green-700 active:scale-95 transition"
+          >
+            {!cart[productId] ? "Thêm vào giỏ hàng" : "Xem giỏ hàng"}
+          </button>
         </div>
-
-        {/* Product Info */}
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {product.name}
-            </h1>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Rating rating={averageRating} />
-                <span className="text-sm text-gray-600">
-                  {averageRating.toFixed(1)} ({ratingsArray.length} đánh giá)
-                </span>
-              </div>
-              <span className="text-sm text-gray-600">
-                Đã bán: {product.sold || 0}
-              </span>
-            </div>
-          </div>
-
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <div className="text-3xl font-bold text-green-600">
-              {product.price?.toLocaleString("vi-VN")}đ
-            </div>
-            {product.mrp && product.mrp > product.price && (
-              <div className="flex items-center gap-2 mt-2">
-                <span className="text-gray-500 line-through">
-                  {product.mrp.toLocaleString("vi-VN")}đ
-                </span>
-                <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-sm font-medium">
-                  -
-                  {Math.round(
-                    ((product.mrp - product.price) / product.mrp) *
-                      100
-                  )}
-                  %
-                </span>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm text-gray-600 mb-2">Số lượng</p>
-              <div className="flex items-center gap-4">
-                <Counter
-                  value={quantity}
-                  onChange={setQuantity}
-                  max={product.stock}
-                />
-                <span className="text-sm text-gray-600">
-                  {product.stock} sản phẩm có sẵn
-                </span>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <button
-                onClick={handleAddToCart}
-                disabled={product.stock === 0}
-                className="flex-1 flex items-center justify-center gap-2 bg-green-100 text-green-700 px-6 py-3 rounded-lg hover:bg-green-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ShoppingCart size={20} />
-                Thêm vào giỏ hàng
-              </button>
-              <button
-                onClick={handleBuyNow}
-                disabled={product.stock === 0}
-                className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Mua ngay
-              </button>
-            </div>
-
-            <div className="flex gap-4">
-              <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
-                <Heart size={20} />
-                Yêu thích
-              </button>
-              <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
-                <Share2 size={20} />
-                Chia sẻ
-              </button>
-            </div>
-          </div>
-
-          <div className="border-t pt-4 space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-gray-600">Danh mục:</span>
-              <span className="font-medium">{product.category?.name}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-gray-600">Cửa hàng:</span>
-              <span className="font-medium">{product.store?.name}</span>
-            </div>
-            {product.unit && (
-              <div className="flex items-center gap-2">
-                <span className="text-gray-600">Đơn vị:</span>
-                <span className="font-medium">{product.unit}</span>
-              </div>
-            )}
-          </div>
+        <hr className="border-gray-300 my-5" />
+        <div className="flex flex-col gap-4 text-slate-500">
+          <p className="flex gap-3">
+            {" "}
+            <EarthIcon className="text-slate-400" /> Miễn phí vận chuyển{" "}
+          </p>
+          <p className="flex gap-3">
+            {" "}
+            <CreditCardIcon className="text-slate-400" /> 100% Thanh toán an
+            toàn{" "}
+          </p>
+          <p className="flex gap-3">
+            {" "}
+            <UserIcon className="text-slate-400" /> Được tin cậy cao bởi khách
+            hàng{" "}
+          </p>
         </div>
       </div>
     </div>
